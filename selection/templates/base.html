@@ -1,0 +1,31 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<!--#if expr="$HTTP_COOKIE=/fonts\-loaded\=true/" -->
+<html lang="ru" class="fonts-loaded">
+<!--#else -->
+<html lang="ru">
+<!--#endif -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %}</title>
+    <meta name="keywords" content="{% block keywords %}{% endblock %}">
+    <meta name="description" content="{% block description %}{% endblock %}">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="{% static 'style.libs.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800,300italic,400italic,600italic,700italic,800italic%7COpen+Sans+Condensed:300,700,300italic%7CRaleway:100,200,300,400,500,600,700,800,900,100italic,200italic,300italic,400italic,500italic,600italic,700italic,800italic,900italic%7CIBM+Plex+Sans:100,200,300,400,500,600,700,100italic,200italic,300italic,400italic,500italic,600italic,700italic%7CFira+Sans+Extra+Condensed:100,200,300,400,500,600,700,800,900,100italic,200italic,300italic,400italic,500italic,600italic,700italic,800italic,900italic">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body class="{% block body-class %}{% endblock %}">
+{% block page_content %}{% endblock %}
+<script src="{% static 'script.libs.js' %}"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+{% block script_files %}{% endblock %}
+<script src="{% static 'script.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

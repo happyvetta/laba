@@ -1,0 +1,323 @@
+{% extends 'base_site.html' %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block body-class %}guideline-body{% endblock %}
+
+{% block content %}
+    <div id="app" class="main-container">
+        <div v-if="!isCompleted">
+            <h2 style="margin-bottom: 30px">Регистрация в личном кабинете</h2>
+            <div class="two-cl-container">
+                <div class="content standard-form-item rg-2-contacts-form-item">
+                    <h4>Личные данные</h4>
+                    <div>
+                        <label class="label">ФИО</label>
+                        <span class="label-error">[[ getFieldError('full_name') ]]</span>
+                        <el-input v-model="inputFullName" class="width-limited"></el-input>
+                    </div>
+                    <div style="margin-top: 10px">
+                        <label class="label">Электронная почта</label>
+                        <span class="label-error">[[ getFieldError('email') ]]</span>
+                        <el-input v-model="email" class="width-limited"></el-input>
+                    </div>
+                    <div style="margin-top: 10px">
+                        <label class="label">Пароль</label>
+                        <span class="label-error">[[ getFieldError('password') ]]</span>
+                        <el-input type="password" v-model="password" class="width-limited"></el-input>
+                    </div>
+                    <div style="margin-top: 10px">
+                        <label class="label">Паспортные данные</label>
+                        <span class="label-error">[[ getFieldError('passport') ]]</span>
+                        <el-input v-model="passport" class="width-limited"></el-input>
+                    </div>
+                    <div style="margin-top: 10px">
+                        <label class="label">Школа</label>
+                        <span class="label-error">[[ getFieldError('school') ]]</span>
+                        <el-input v-model="school" class="width-limited"></el-input>
+                    </div>
+                    <div style="margin-top: 10px">
+                        <label class="label">Год окончания школы</label>
+                        <span class="label-error">[[ getFieldError('year_graduation') ]]</span>
+                        <el-input v-model="year_graduation" class="width-limited"></el-input>
+                    </div>
+                    <div style="margin-top: 10px">
+                        <label class="label">Наличие медали</label>
+                        <span class="label-error">[[ getFieldError('medal') ]]</span>
+                        <el-select v-model="select_medal" class="width-limited" placeholder="Наличие медали">
+                            <el-option
+                                    v-for="item in medal_types"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="two-cl-container">
+                <div class="content standard-form-item">
+                    <h4>Информация о ЕГЭ</h4>
+                    <div class="data_authorization">
+                         <div class="data contacts">
+                        <span class="label">Предметы</span>
+                        <div class="table">
+                            <table class="contacts_table">
+                                <tr>
+                                    <th>Название предмета</th>
+                                    <th>Количество баллов</th>
+                                </tr>
+                                <tr v-for="(entrant_subject, index) in entrantSubjects" :key="index">
+                                    <td>[[ entrant_subject.subject.title ]]</td>
+                                    <td>[[ entrant_subject.score ]]</td>
+                                    <td>
+                                        <div class="phone">
+                                            <span @click="editEditSubjectForm(index)" class="icon_edit"></span>
+                                            <span @click="deleteEntrantSubject(index)" class="icon_delete"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <button @click="openAddSubjectForm" class="btn__add_phone" type="button">
+                                <span class="icon_plus"></span>Добавить предмет
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <el-button type="primary" :loading="isLoadingBtn" v-on:click="createAccount">Завершить регистрацию</el-button>
+        </div>
+        <div v-else class="standard-form-item">
+            <h2>Добро пожаловать!</h2>
+            <p style="margin-top: 20px">Вы зарегистрированы в личном кабинете. <br/>Данные для входа мы отправили на Вашу электронную почту</p>
+            <a style="margin-top: 20px; display: block" href="{% url 'login' %}">
+                <el-button type="primary">Войти в личный кабинет</el-button>
+            </a>
+        </div>
+
+    <el-dialog class="form__add_phone" @close="closeSubjectForm" :visible.sync="addSubjectVisible"
+               title="Добавить предмет" width="40%">
+        <el-form :model="formInline" :rules="rules" ref="formInline" class="demo-form-inline form__add_phone">
+                <el-form-item prop="subject" label="Предмет:">
+                    <el-select class="select_positions" v-model="formInline.subject"
+                               placeholder="Выберите предмет">
+                        <el-option v-for="subject in subjects" :key="subject.id" :label="subject.title"
+                                   :value="subject.id"></el-option>
+                    </el-select>
+                </el-form-item>
+            <el-form-item label="Количество баллов:" prop="score">
+                <el-input type="number" min="0" max="100" v-model="formInline.score" placeholder="Количество баллов"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="createSubject">Добавить</el-button>
+                <el-button @click="closeSubjectForm">Отменить</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+    <el-dialog class="form__add_phone" @close="closeEditSubjectForm" :visible.sync="editSubjectDialogVisible"
+               title="Редактировать предмет" width="40%">
+        <el-form :model="editFormInline" :rules="rules" ref="editFormInline" class="demo-form-inline form__add_phone">
+            <el-form-item prop="subject" label="Предмет:">
+                <el-select class="select_positions" v-model="editFormInline.subject"
+                           placeholder="Укажите предмет" value-key="id">
+                    <el-option v-for="subject in subjects" :label="subject.title"
+                               :value="subject.id"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="Количество баллов:" prop="score">
+                <el-input type="number" min="0" max="100" v-model="editFormInline.score" placeholder="Количество баллов"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button @click="editSubject" type="primary">Сохранить</el-button>
+                <el-button @click="closeEditSubjectForm">Отменить</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+    </div>
+
+{% endblock %}
+
+
+{% block scripts %}
+  <script>
+      new Vue({
+          el: '#app',
+          delimiters: ['[[', ']]'],
+          data: function () {
+              return {
+                  inputFullName: '',
+                  email: '',
+                  password: '',
+                  passport: '',
+                  school: '',
+                  year_graduation: '',
+                  select_medal: '',
+                  medal_types: [{
+                      value: 'gold',
+                      label: 'Золотая'
+                  }, {
+                      value: 'silver',
+                      label: 'Серебряная'
+                  }, {
+                      value: 'without_medal',
+                      label: 'Без медали'
+                  }],
+                  subjects: {{ subjects|safe }},
+                  entrantSubjects: [],
+                  isLoadingBtn: false,
+                  errors: {},
+                  isCompleted: false,
+                  addSubjectVisible: false,
+                  editSubjectDialogVisible: false,
+                  formInline: {
+                      subject: '',
+                      score: ''
+                  },
+                  editFormInline: {
+                      id: '',
+                      subject: '',
+                      score: ''
+                  },
+                  rules: {
+                      subject: [
+                          {required: true, message: 'Это поле обязательное', trigger: 'change'}
+                      ],
+                      score: [
+                          {required: true, message: 'Это поле обязательное', trigger: 'blur'}
+                      ]
+                  }
+              }
+          },
+          methods: {
+              createSubject() {
+                  this.$refs['formInline'].validate((valid) => {
+                      if (valid) {
+                          let searchSubject = this.formInline.subject ? this.subjects.find(
+                              subject => subject.id === this.formInline.subject) : '';
+                          let data = {
+                              id: '',
+                              subject: searchSubject,
+                              score: this.formInline.score
+                          };
+                          this.entrantSubjects.push(data);
+                          this.closeSubjectForm();
+                      } else {
+                          return false;
+                      }
+                  });
+              },
+              openAddSubjectForm() {
+                  this.addSubjectVisible = true;
+                },
+              openEditPhoneForm() {
+                    this.editSubjectDialogVisible = true;
+                },
+              closeSubjectForm() {
+                  this.addSubjectVisible = false;
+                  this.formInline = {
+                      subject: '',
+                      score: ''
+                  };
+                  this.$refs['formInline'].resetFields();
+
+              },
+              closeEditSubjectForm() {
+                  this.editSubjectDialogVisible = false;
+                  this.editFormInline = {
+                      subject: '',
+                      score: ''
+                  };
+                  this.$refs['editFormInline'].resetFields();
+              },
+              editEditSubjectForm(index) {
+                    let subjectInfo = this.entrantSubjects[index];
+                    this.currentIndex = index;
+                    this.editFormInline = {
+                        id: subjectInfo.id,
+                        subject: subjectInfo.subject.id,
+                        score: subjectInfo.score
+                    };
+                    this.openEditPhoneForm();
+                },
+                editSubject() {
+                    this.$refs['editFormInline'].validate((valid) => {
+                        if (valid) {
+                            let subjectObj = this.entrantSubjects[this.currentIndex];
+                            subjectObj.subject = this.subjects.find(
+                                subject => subject.id === this.editFormInline.subject);
+                            subjectObj.score = this.editFormInline.score;
+                            this.closeEditSubjectForm();
+                        } else {
+                            return false;
+                        }
+                    });
+                },
+               deleteEntrantSubject(index) {
+                  this.entrantSubjects.splice(index, 1);
+                },
+              clearErrors() {
+                  this.errors = {};
+              },
+              setErrors(errors) {
+                  this.errors = errors;
+              },
+              getFieldError(fieldName) {
+                  if (this.errors[fieldName] !== undefined) {
+                      if (this.errors[fieldName].length > 0) {
+                          return this.errors[fieldName][0];
+                      }
+                  }
+                  return null;
+              },
+              createAccount() {
+                  this.isLoadingBtn = true;
+                  this.clearErrors();
+                  let entrantSubjects = this.entrantSubjects.map(function (item) {
+                     return {'subject': item.subject.id, 'score': item.score}
+                  });
+                  fetch('{% url 'registration-create-account' %}', {
+                      method: 'POST',
+                      headers: {
+                          'Accept': 'application/json',
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                          full_name: this.inputFullName,
+                          email: this.email,
+                          passport: this.passport,
+                          password: this.password,
+                          school: this.school,
+                          year_graduation: this.year_graduation,
+                          medal: this.select_medal,
+                          entrantSubjects: entrantSubjects
+
+                      })
+                  })
+                      .then((response) => {
+                          if (response.ok) {
+                              return response.json();
+                          }
+                          throw new Error('Network response was not ok');
+                      })
+                      .then((json) => {
+                          this.isLoadingBtn = false;
+
+                          if (json.success === true) {
+                              this.isCompleted = true
+                          } else {
+                              console.log(json)
+                              this.setErrors(json.errors)
+                          }
+                      })
+                      .catch((error) => {
+                          this.isLoadingBtn = false;
+                          this.setErrors();
+                      });
+              }
+          }
+      })
+  </script>
+{% endblock %}
