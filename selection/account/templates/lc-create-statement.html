@@ -1,0 +1,188 @@
+{% extends 'lc-layout.html' %}
+
+{% block secondary_content %}
+     <div id="app" class="main-container">
+        <div class="two-cl-container">
+            <div class="content standard-form-item rg-2-contacts-form-item">
+                <h4>Подать заявление</h4>
+                <div>
+                    <label class="label">ФИО</label>
+                    <span style="margin-top: 5px" class="width-limited">[[ full_name ]]</span>
+                </div>
+                <div style="margin-top: 10px">
+                    <label class="label">Паспортные данные</label>
+                    <span style="margin-top: 5px" class="width-limited">[[ passport ]]</span>
+                </div>
+                <div style="margin-top: 10px">
+                    <label class="label">Школа</label>
+                    <span style="margin-top: 5px" class="width-limited">[[ school ]]</span>
+                </div>
+                <div style="margin-top: 10px">
+                    <label class="label">Год окончания школы</label>
+                     <span style="margin-top: 5px" class="width-limited">[[ year_graduation ]]</span>
+                </div>
+                <div style="margin-top: 10px">
+                    <label class="label">Наличие медали</label>
+                    <span style="margin-top: 5px" class="width-limited">[[ medal ]]</span>
+                </div>
+                <div style="margin-top: 10px">
+                    <label class="label">Факультет</label>
+                    <el-select @change="loadRelevantSpecialties" v-model="selectFaculty" class="width-limited" placeholder="Факультет">
+                        <el-option
+                                v-for="item in faculties"
+                                :key="item.id"
+                                :label="item.title"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+                </div>
+                 <div style="margin-top: 10px">
+                    <label class="label">Специальность</label>
+                    <span class="label-error">[[ getFieldError('special') ]]</span>
+                    <el-select v-model="selectSpecial" class="width-limited" placeholder="Специальность">
+                        <el-option
+                                v-for="item in relevantSpecialties"
+                                :key="item.id"
+                                :label="item.title"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+                </div>
+                <div style="margin-top: 10px">
+                    <label class="label">Форма обучения</label>
+                    <span class="label-error">[[ getFieldError('learning_type') ]]</span>
+                    <el-select v-model="selectLearningType" class="width-limited" placeholder="Форма обучения">
+                        <el-option
+                                v-for="item in learning_types"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                        </el-option>
+                    </el-select>
+                </div>
+                <div style="margin-top: 10px">
+                    <label class="label">Тип оплаты</label>
+                    <span class="label-error">[[ getFieldError('payment_type') ]]</span>
+                    <el-select v-model="selectPaymentType" class="width-limited" placeholder="Тип оплаты">
+                        <el-option
+                                v-for="item in payment_types"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value">
+                        </el-option>
+                    </el-select>
+                </div>
+            </div>
+        </div>
+        <el-button type="primary" :loading="isLoadingBtn" v-on:click="createAccount">Добавить заявление</el-button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+      new Vue({
+          el: '#app',
+          delimiters: ['[[', ']]'],
+          data: function () {
+              return {
+                  activeIndex: 2,
+                  full_name: '{{ user.full_name }}',
+                  email: '',
+                  passport: '{{ user.passport }}',
+                  school: '{{ user.school }}',
+                  year_graduation: '{{ user.year_graduation }}',
+                  medal: '{{ user.medal }}',
+                  selectLearningType: '',
+                  selectPaymentType: '',
+                  selectFaculty: '',
+                  selectSpecial: '',
+                  learning_types: [
+                      {
+                          value: 'internal',
+                          label: 'Очная'
+                      }, {
+                          value: 'part_time',
+                          label: 'Очно-заочная (вечерняя)'
+                      }, {
+                          value: 'distance',
+                          label: 'Заочная'
+                      }
+                  ],
+                  payment_types: [
+                      {
+                          value: 'budget',
+                          label: 'На бюджетной основе'
+                      }, {
+                          value: 'commerce',
+                          label: 'На коммерческой основе'
+                      }
+                  ],
+                  faculties: {{ faculties|safe }},
+                  specialties: {{ specialties|safe }},
+                  relevantSpecialties: [],
+                  isLoadingBtn: false,
+                  errors: {},
+                  isCompleted: false,
+                  addSubjectVisible: false,
+                  editSubjectDialogVisible: false,
+              }
+          },
+          methods: {
+              getFieldError(fieldName) {
+                  if (this.errors[fieldName] !== undefined) {
+                      if (this.errors[fieldName].length > 0) {
+                          return this.errors[fieldName][0];
+                      }
+                  }
+                  return null;
+              },
+              clearErrors() {
+                  this.errors = {};
+              },
+              setErrors(errors) {
+                  this.errors = errors;
+              },
+              loadRelevantSpecialties() {
+                this.relevantSpecialties = this.specialties.filter(special => special.faculty === this.selectFaculty);
+              },
+              createAccount() {
+                  this.isLoadingBtn = true;
+                  this.clearErrors();
+                  fetch('{% url 'lc-create-statement' %}', {
+                      method: 'POST',
+                      headers: {
+                          'Accept': 'application/json',
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                          entrant: '{{ user.id }}',
+                          payment_type: this.selectPaymentType,
+                          learning_type: this.selectLearningType,
+                          special: this.selectSpecial
+                      })
+                  })
+                      .then((response) => {
+                          if (response.ok) {
+                              return response.json();
+                          }
+                          throw new Error('Network response was not ok');
+                      })
+                      .then((json) => {
+                          this.isLoadingBtn = false;
+
+                          if (json.success === true) {
+                              this.isCompleted = true;
+                              window.location.replace('{% url 'lc-statements' %}');
+                          } else {
+                              this.setErrors(json.errors)
+                          }
+                      })
+                      .catch((error) => {
+                          this.isLoadingBtn = false;
+                          this.setErrors();
+                      });
+              }
+          }
+      })
+  </script>
+{% endblock %}

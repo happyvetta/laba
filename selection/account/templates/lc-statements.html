@@ -1,0 +1,380 @@
+{% extends 'lc-layout.html' %}
+
+{% block title %}Заявления{% endblock %}
+
+{% block secondary_content %}
+    <div class="lc-content">
+    <div class="lc-data-container">
+        <div class="two-cl-container">
+            <div class="content standard-form-item">
+                <h4>Заявления</h4>
+                <div class="data_authorization">
+                    <div class="data contacts">
+                        <span class="label" style="width: 20%">Заявления</span>
+                        <div class="table" style="width: calc(80% - 30px)">
+                            <table class="contacts_table" width="100%">
+                                <tr>
+                                    <th>Специальность</th>
+                                    <th>Форма обучения</th>
+                                    <th>Тип оплаты</th>
+                                    <th>Статус</th>
+                                </tr>
+                                <tr v-for="(statement, index) in statements" :key="index">
+                                    <td>[[ statement.special.title ]]</td>
+                                    <td>[[ statement.learning_type ]]</td>
+                                    <td>[[ statement.payment_type ]]</td>
+                                    <td>[[ statement.status ]]</td>
+                                    <td>
+                                        <div class="phone">
+                                            <span @click="initEditStatementForm(index)" class="icon_edit"></span>
+                                            <span @click="deleteStatement(index)" class="icon_delete"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <button @click="openAddStatementForm" class="btn__add_phone" type="button">
+                                <span class="icon_plus"></span>Добавить заявление
+                            </button>
+                        </div>
+                    </div>
+                    <div class="btn__save_data">
+                        <el-button @click="saveInfo" :loading="isLoadingBtn" type="primary">Сохранить</el-button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <el-dialog class="form__add_phone" @close="closeStatementForm" :visible.sync="addStatementForm"
+                   title="Добавить заявление" width="40%">
+            <el-form :model="formInline" :rules="rules" ref="formInline" class="demo-form-inline form__add_phone">
+                <el-form-item prop="faculty" label="Факультет:">
+                    <el-select @change="updateSpecialties" class="select_positions" v-model="formInline.faculty"
+                               placeholder="Выберите факультет">
+                        <el-option v-for="faculty in faculties" :key="faculty.id" :label="faculty.title"
+                                   :value="faculty.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item prop="special" label="Специальность:">
+                    <el-select class="select_positions" v-model="formInline.special"
+                               placeholder="Выберите факультет">
+                        <el-option v-for="special in specialtiesByFaculty" :key="special.id" :label="special.title"
+                                   :value="special.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="Форма обучения:" prop="learning_type">
+                    <el-select class="select_positions" v-model="formInline.learning_type"
+                               placeholder="Выберите форму обучения">
+                        <el-option v-for="(learning_type, index) in learning_types" :key="index"
+                                   :label="learning_type.label" :value="learning_type.value"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="Тип оплаты:" prop="payment_type">
+                    <el-select class="select_positions" v-model="formInline.payment_type"
+                               placeholder="Выберите тип оплаты">
+                        <el-option v-for="(payment_type, index) in payment_types" :key="index" :label="payment_type.label"
+                                   :value="payment_type.value"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="createStatement">Создать</el-button>
+                    <el-button @click="closeStatementForm">Отменить</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+
+
+        <el-dialog class="form__add_phone" @close="closeEditStatementForm" :visible.sync="editStatementForm"
+                   title="Редактировать заявление" width="40%">
+            <el-form :model="editFormInline" :rules="rules" ref="editFormInline" class="demo-form-inline form__add_phone">
+                 <el-form-item label="ФИО:">
+                    <span>[[ fullName ]]</span>
+                </el-form-item>
+                 <el-form-item label="Паспорт:">
+                    <span>[[ passport ]]</span>
+                </el-form-item>
+                 <el-form-item label="Школа:">
+                    <span>[[ school ]]</span>
+                </el-form-item>
+                 <el-form-item label="Год окончания:">
+                    <span>[[ yearGraduation ]]</span>
+                </el-form-item>
+                 <el-form-item label="Медаль:">
+                    <span>[[ medal ]]</span>
+                </el-form-item>
+                <el-form-item prop="faculty" label="Факультет:">
+                    <el-select @change="updateSpecialties" class="select_positions" v-model="editFormInline.faculty"
+                               placeholder="Выберите факультет">
+                        <el-option v-for="faculty in faculties" :key="faculty.id" :label="faculty.title"
+                                   :value="faculty.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item prop="special" label="Специальность:">
+                    <el-select class="select_positions" v-model="editFormInline.special"
+                               placeholder="Выберите факультет">
+                        <el-option v-for="special in specialtiesByFaculty" :key="special.id" :label="special.title"
+                                   :value="special.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="Форма обучения:" prop="learning_type">
+                    <el-select class="select_positions" v-model="editFormInline.learning_type"
+                               placeholder="Выберите форму обучения">
+                        <el-option v-for="(learning_type, index) in learning_types" :key="index"
+                                   :label="learning_type.label" :value="learning_type.value"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="Тип оплаты:" prop="payment_type">
+                    <el-select class="select_positions" v-model="editFormInline.payment_type"
+                               placeholder="Выберите тип оплаты">
+                        <el-option v-for="(payment_type, index) in payment_types" :key="index" :label="payment_type.label"
+                                   :value="payment_type.value"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="editStatement">Сохранить</el-button>
+                    <el-button @click="closeEditStatementForm">Отменить</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data: function () {
+                return {
+                    userId: '{{ user.id }}',
+                    fullName: '{{ user.full_name }}',
+                    passport: '{{ user.passport }}',
+                    school: '{{ user.school }}',
+                    yearGraduation: '{{ user.year_graduation }}',
+                    medal: '{{ user.get_medal_name }}',
+                    activeIndex: '2',
+                    statements: {{ statements|safe }},
+                    faculties: {{ faculties|safe }},
+                    specialties: {{ specialties|safe }},
+                    specialtiesByFaculty: [],
+                    learning_types: [{
+                        value: 'internal',
+                        label: 'Очная'
+                    }, {
+                        value: 'part_time',
+                        label: 'Очно-заочная (вечерняя)'
+                    }, {
+                        value: 'distance',
+                        label: 'Заочная'
+                    }],
+                     payment_types: [{
+                        value: 'budget',
+                        label: 'На бюджетной основе'
+                    }, {
+                        value: 'commerce',
+                        label: 'На коммерческой основе'
+                    },
+                     {
+                        value: 'target',
+                        label: 'По целевому направлению'
+                    }],
+                    statuses: [{
+                        value: 'verification_wait',
+                        label: 'Ожидает подтверждения'
+                    },{
+                        value: 'verification_success',
+                        label: 'Заявление принято'
+                    },{
+                        value: 'verification_denied',
+                        label: 'Заявление отклонено'
+                    }],
+                    addStatementForm: false,
+                    editStatementForm: false,
+                    formInline: {
+                        faculty: '',
+                        special: '',
+                        learning_type: '',
+                        payment_type: ''
+                    },
+                    editFormInline: {
+                        faculty: '',
+                        special: '',
+                        learning_type: '',
+                        payment_type: ''
+                    },
+                    rules: {
+                        faculty: [
+                            {required: true, message: 'Это поле обязательное', trigger: 'change'}
+                        ],
+                        special: [
+                            {required: true, message: 'Это поле обязательное', trigger: 'change'}
+                        ],
+                        payment_type: [
+                            {required: true, message: 'Это поле обязательное', trigger: 'change'}
+                        ],
+                        learning_type: [
+                            {required: true, message: 'Это поле обязательное', trigger: 'change'}
+                        ]
+                    },
+                    currentIndex: null,
+                    isLoadingBtn: false
+                }
+            },
+            methods: {
+                openAddStatementForm() {
+                    this.addStatementForm = true;
+                },
+                openEditStatementForm() {
+                    this.editStatementForm = true;
+                },
+                closeStatementForm() {
+                    this.addStatementForm = false;
+                    this.formInline = {
+                        faculty: '',
+                        special: '',
+                        learning_type: '',
+                        payment_type: ''
+                    };
+                    this.specialtiesByFaculty = [];
+                },
+                closeEditStatementForm() {
+                    this.editStatementForm = false;
+                    this.editformInline = {
+                        faculty: '',
+                        special: '',
+                        learning_type: '',
+                        payment_type: ''
+                    };
+                    this.specialtiesByFaculty = [];
+                },
+                initEditStatementForm(index) {
+                    this.currentIndex = index;
+                    let statementInfo = this.statements[this.currentIndex];
+                    this.specialtiesByFaculty = this.specialties.filter(
+                        special => special.faculty === statementInfo.special.faculty
+                    );
+                    this.editFormInline = {
+                        id: statementInfo.id,
+                        faculty: statementInfo.special.faculty,
+                        special: statementInfo.special.id,
+                        learning_type: statementInfo.learning_type,
+                        payment_type: statementInfo.payment_type
+                    };
+                    this.openEditStatementForm();
+                },
+                  createStatement() {
+                     this.$refs['formInline'].validate((valid) => {
+                        if (valid) {
+                            let selectSpecial = this.formInline.special ? this.specialties.find(
+                                special => special.id === this.formInline.special) : '';
+                            let selectPaymentType = this.formInline.payment_type ? this.payment_types.find(
+                                payment_type => payment_type.value === this.formInline.payment_type) : '';
+                            let selectLearningType = this.formInline.learning_type ? this.learning_types.find(
+                                learning_type => learning_type.value === this.formInline.learning_type) : '';
+                            let data = {
+                                id: '',
+                                special: selectSpecial,
+                                payment_type: selectPaymentType.label,
+                                learning_type: selectLearningType.label,
+                                status: 'Ожидает подтверждения'
+                            };
+                            this.statements.push(data);
+                            this.closeStatementForm();
+                        } else {
+                            return false;
+                        }
+                    })
+                },
+                 editStatement() {
+                    this.$refs['editFormInline'].validate((valid) => {
+                        if (valid) {
+                            let statementObj = this.statements[this.currentIndex];
+                            statementObj.special = this.editFormInline.special ? this.specialties.find(
+                                special => special.id === this.editFormInline.special) : '';
+
+                            statementObj.payment_type = this.payment_types.find(
+                                payment_type => payment_type.label === this.editFormInline.payment_type ||
+                                        payment_type.value === this.editFormInline.payment_type
+                            )['label'];
+
+                            statementObj.learning_type = this.learning_types.find(
+                                learning_type => learning_type.label === this.editFormInline.learning_type ||
+                                        learning_type.value === this.editFormInline.learning_type
+                            )['label'];
+                            statementObj.status = 'Ожидает подтверждения';
+                            this.closeEditStatementForm();
+                        } else {
+                            return false;
+                        }
+                    })
+                },
+                deleteStatement(index) {
+                  this.statements.splice(index, 1);
+                },
+                updateSpecialties(faculty) {
+                    this.specialtiesByFaculty = this.specialties.filter(
+                        item => item.faculty === faculty
+                    )
+                },
+                statementsToJson() {
+                    return this.statements.map(function (item) {
+                        console.log(item)
+                        return {
+                            id: item.id,
+                            entrant: this.userId,
+                            special: item.special.id,
+                            learning_type: this.learning_types.find(
+                                learning_type => learning_type.label === item.learning_type
+                            )['value'],
+                            payment_type: this.payment_types.find(
+                                payment_type => payment_type.label === item.payment_type
+                            )['value'],
+                             status: this.statuses.find(
+                                status => status.label === item.status
+                            )['value']
+                        }
+                    }.bind(this));
+                },
+                openAlert() {
+                    this.$alert('Изменения сохранены.', 'Заявления', {
+                        confirmButtonText: 'OK',
+                        confirmButtonClass: 'confirms_save_btn'
+                    });
+                },
+                saveInfo() {
+                    this.isLoadingBtn = true;
+                    let data = JSON.stringify({
+                        statements: this.statementsToJson()
+                    });
+
+                    let url = '{% url 'save-statements' %}';
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: data,
+                    })
+                        .then((response) => {
+                            if (response.ok) {
+                                return response.json();
+                            }
+                            throw new Error('Network response was not ok');
+                        })
+                        .then((json) => {
+                            if (json['success']) {
+                                this.isLoadingBtn = false;
+                                this.openAlert();
+                            }
+                        })
+                        .catch((error) => {
+                            console.log(error);
+                        });
+                }
+            }
+        })
+    </script>
+{% endblock %}
