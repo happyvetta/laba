@@ -1,0 +1,85 @@
+{% extends 'base_site.html' %}
+
+{% block title %}Вход в личный кабинет{% endblock %}
+
+{% block body-class %}guideline-body{% endblock %}
+
+{% block content %}
+    <div id="app" class="main-container">
+        <div class="standard-form-item login-form-76tr3d">
+            <h4>Войти в личный  кабинет</h4>
+            <label class="label-error" v-if="isError">Данные входа введены не верно</label>
+            <div style="margin-top: 10px; display: flex">
+              <el-input placeholder="Введите email" v-model="inputLogin"></el-input>
+            </div>
+            <div style="margin-top: 10px; display: flex">
+              <el-input type="password" placeholder="Введите пароль" v-model="inputPassword"></el-input>
+            </div>
+            <div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between">
+                <a href="{% url 'registration' %}" style="margin-right: 10px">
+                    <el-button type="primary" plain>Регистрация</el-button>
+                </a>
+                <el-button type="primary" style="width: 100%" :loading="isLoadingBtn" v-on:click="login">Войти</el-button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+  <script>
+    new Vue({
+      el: '#app',
+      data: function() {
+        return {
+            inputLogin: '',
+            inputPassword: '',
+            isLoadingBtn: false,
+            isError: false
+        }
+      },
+      methods: {
+          clearErrors() {
+              this.isError = false
+          },
+          setErrors() {
+              this.isError = true
+          },
+          login() {
+              this.isLoadingBtn = true;
+              this.clearErrors();
+              fetch('{% url 'login' %}', {
+                  method: 'POST',
+                  headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      login: this.inputLogin,
+                      password: this.inputPassword
+                  })
+              })
+                .then((response) => {
+                    if(response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok');
+                })
+                .then((json) => {
+                    this.isLoadingBtn = false;
+
+                    if (json.success === true) {
+                        window.location.replace('/');
+                    } else {
+                        this.setErrors()
+                    }
+                })
+                .catch((error) => {
+                    this.isLoadingBtn = false;
+                    this.setErrors()
+                });
+          }
+      }
+     })
+  </script>
+{% endblock %}

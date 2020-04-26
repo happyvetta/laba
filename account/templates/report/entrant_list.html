@@ -1,0 +1,63 @@
+<div style="max-width: 960px; margin: 0 auto">
+    {% for faculty in faculties %}
+        <h2 style="font-size: 22px">Список поступающих на факультет <b>{{ faculty.title }}</b></h2>
+        {% for special in faculty.get_specialities %}
+            <div style="width: 100%; margin-top: 20px">
+                <span style="font-size: 20px">Направление подготовки: <b>{{ special.title }}</b></span>
+                <div>
+                    <h5>Очная форма обучения:</h5>
+                    <table style="border: 1px solid black; width: 60%; text-align: left; margin-top: 20px">
+                        <tr>
+                            <th>№ п/п</th>
+                            <th>ФИО</th>
+                            <th>Сумма баллов</th>
+                        </tr>
+                        {% for statement in special.get_internal_statements %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ statement.entrant.full_name }}</td>
+                                <td>{{ statement.get_score }}</td>
+                            <tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div>
+                    <h5>Заочная форма обучения:</h5>
+                    <table style="border: 1px solid black; width: 60%; text-align: left; margin-top: 20px">
+                        <tr>
+                            <th>№ п/п</th>
+                            <th>ФИО</th>
+                            <th>Сумма баллов</th>
+                        </tr>
+                        {% for statement in special.get_distance_statements %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ statement.entrant.full_name }}</td>
+                                <td>{{ statement.get_score }}</td>
+                            <tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div>
+                    <h5>Очно-заочная форма обучения:</h5>
+                    <table style="border: 1px solid black; width: 60%; text-align: left; margin-top: 20px">
+                        <tr>
+                            <th>№ п/п</th>
+                            <th>ФИО</th>
+                            <th>Сумма баллов</th>
+                        </tr>
+                        {% for statement in special.get_part_time_statements %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ statement.entrant.full_name }}</td>
+                                <td>{{ statement.get_score }}</td>
+                            <tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        {% empty %}
+            <span>Нет заявлений</span>
+        {% endfor %}
+    {% endfor %}
+</div>

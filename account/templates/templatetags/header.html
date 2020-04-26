@@ -1,0 +1,11 @@
+<header class="header">
+    <div class="header__middle_wrapper">
+        <div class="header__middle header__common">
+            {% if user.is_authenticated %}
+                <a href="{% url 'logout' %}" class="middle__personal_area">Выйти</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="middle__personal_area">Личный кабинет</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
