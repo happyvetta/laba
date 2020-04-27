@@ -1,0 +1,278 @@
+{% extends 'lc-layout.html' %}
+
+{% block title %}Личные данные{% endblock %}
+
+{% block secondary_content %}
+    <div class="lc-content">
+        <div class="lc-data-container">
+            <div class="two-cl-container">
+                <div class="content standard-form-item">
+                    <h4>Личные данные</h4>
+                    <div class="data_authorization">
+                        <div class="data">
+                            <span class="label">ФИО</span>
+                            <span>[[ full_name ]]</span>
+                        </div>
+                        <div class="data">
+                            <span class="label">Электронные адрес</span>
+                            <span>[[ email ]]</span>
+
+                        </div>
+                        <div class="data">
+                            <span class="label">Паспортные данные</span>
+                            <span>[[ passport ]]</span>
+
+                        </div>
+                        <div class="data">
+                            <span class="label">Школа</span>
+                            <span>[[ school ]]</span>
+
+                        </div>
+                        <div class="data">
+                            <span class="label">Год окончания</span>
+                            <span>[[ year_graduation ]]</span>
+
+                        </div>
+                        <div class="data">
+                            <span class="label">Наличие медали</span>
+                            <span>[[ medal ]]</span>
+
+                        </div>
+                    </div>
+                    <div class="data_authorization">
+                        <div class="data contacts">
+                            <span class="label">Предметы</span>
+                            <div class="table">
+                                <table class="contacts_table">
+                                    <tr>
+                                        <th>Название предмета</th>
+                                        <th>Количество баллов</th>
+                                    </tr>
+                                    <tr v-for="(entrant_subject, index) in entrantSubjects" :key="index">
+                                        <td>[[ entrant_subject.subject.title ]]</td>
+                                        <td>[[ entrant_subject.score ]]</td>
+                                        <td>
+                                            <div class="phone">
+                                                <span @click="editEditSubjectForm(index)" class="icon_edit"></span>
+                                                <span @click="deleteEntrantSubject(index)" class="icon_delete"></span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <button @click="openAddSubjectForm" class="btn__add_phone" type="button">
+                                    <span class="icon_plus"></span>Добавить предмет
+                                </button>
+                            </div>
+                        </div>
+                        <div class="btn__save_data">
+                            <el-button @click="saveSubjectInfo" :loading="isLoadingBtn" type="primary">Сохранить
+                            </el-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <el-dialog class="form__add_phone" @close="closeSubjectForm" :visible.sync="addSubjectVisible"
+                   title="Добавить предмет" width="40%">
+            <el-form :model="formInline" :rules="rules" ref="formInline" class="demo-form-inline form__add_phone">
+                <el-form-item prop="subject" label="Предмет:">
+                    <el-select class="select_positions" v-model="formInline.subject"
+                               placeholder="Выберите предмет">
+                        <el-option v-for="subject in subjects" :key="subject.id" :label="subject.title"
+                                   :value="subject.id"></el-option>
+                    </el-select>
+                </el-form-item>
+            <el-form-item label="Количество баллов:" prop="score">
+                <el-input type="number" min="0" max="100" v-model="formInline.score" placeholder="Количество баллов"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="createSubject">Добавить</el-button>
+                <el-button @click="closeSubjectForm">Отменить</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+    <el-dialog class="form__add_phone" @close="closeEditSubjectForm" :visible.sync="editSubjectDialogVisible"
+               title="Редактировать предмет" width="40%">
+        <el-form :model="editFormInline" :rules="rules" ref="editFormInline" class="demo-form-inline form__add_phone">
+            <el-form-item prop="subject" label="Предмет:">
+                <el-select class="select_positions" v-model="editFormInline.subject"
+                           placeholder="Укажите предмет" value-key="id">
+                    <el-option v-for="subject in subjects" :label="subject.title"
+                               :value="subject.id"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="Количество баллов:" prop="score">
+                <el-input type="number" min="0" max="100" v-model="editFormInline.score" placeholder="Количество баллов"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button @click="editSubject" type="primary">Сохранить</el-button>
+                <el-button @click="closeEditSubjectForm">Отменить</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+
+    </div>
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data: function () {
+                return {
+                    userId: '{{ user.id }}',
+                    activeIndex: '1',
+                    full_name: '{{ user.full_name }}',
+                    email: '{{ user.email }}',
+                    passport: '{{ user.passport }}',
+                    school: '{{ user.school }}',
+                    year_graduation: '{{ user.year_graduation }}',
+                    medal: '{{ user.get_medal_name }}',
+                                      subjects: {{ subjects|safe }},
+
+                    entrantSubjects: {{ entrant_subjects|safe }},
+                    addSubjectVisible: false,
+                  editSubjectDialogVisible: false,
+                  formInline: {
+                      subject: '',
+                      score: ''
+                  },
+                  editFormInline: {
+                      id: '',
+                      subject: '',
+                      score: ''
+                  },
+                  rules: {
+                      subject: [
+                          {required: true, message: 'Это поле обязательное', trigger: 'change'}
+                      ],
+                      score: [
+                          {required: true, message: 'Это поле обязательное', trigger: 'blur'}
+                      ]
+                  },
+                    isLoadingBtn: false
+
+                }
+            },
+            methods: {
+                createSubject() {
+                    this.$refs['formInline'].validate((valid) => {
+                        if (valid) {
+                            let searchSubject = this.formInline.subject ? this.subjects.find(
+                                subject => subject.id === this.formInline.subject) : '';
+                            let data = {
+                                id: '',
+                                subject: searchSubject,
+                                score: this.formInline.score
+                            };
+                            this.entrantSubjects.push(data);
+                            this.closeSubjectForm();
+                        } else {
+                            return false;
+                        }
+                    });
+                },
+                openAddSubjectForm() {
+                    this.addSubjectVisible = true;
+                },
+                openEditPhoneForm() {
+                    this.editSubjectDialogVisible = true;
+                },
+                closeSubjectForm() {
+                    this.addSubjectVisible = false;
+                    this.formInline = {
+                        subject: '',
+                        score: ''
+                    };
+                    this.$refs['formInline'].resetFields();
+
+                },
+                closeEditSubjectForm() {
+                    this.editSubjectDialogVisible = false;
+                    this.editFormInline = {
+                        subject: '',
+                        score: ''
+                    };
+                    this.$refs['editFormInline'].resetFields();
+                },
+                editEditSubjectForm(index) {
+                    let subjectInfo = this.entrantSubjects[index];
+                    this.currentIndex = index;
+                    this.editFormInline = {
+                        id: subjectInfo.id,
+                        subject: subjectInfo.subject.id,
+                        score: subjectInfo.score
+                    };
+                    this.openEditPhoneForm();
+                },
+                editSubject() {
+                    this.$refs['editFormInline'].validate((valid) => {
+                        if (valid) {
+                            let subjectObj = this.entrantSubjects[this.currentIndex];
+                            subjectObj.subject = this.subjects.find(
+                                subject => subject.id === this.editFormInline.subject);
+                            subjectObj.score = this.editFormInline.score;
+                            this.closeEditSubjectForm();
+                        } else {
+                            return false;
+                        }
+                    });
+                },
+                deleteEntrantSubject(index) {
+                    this.entrantSubjects.splice(index, 1);
+                },
+                openAlert() {
+                    this.$alert('Изменения сохранены.', 'Заявления', {
+                        confirmButtonText: 'OK',
+                        confirmButtonClass: 'confirms_save_btn'
+                    });
+                },
+                subjectsToJson() {
+                    return this.entrantSubjects.map(function (item) {
+                        return {
+                            id: item.id,
+                            entrant: this.userId,
+                            subject: item.subject.id,
+                            score: item.score
+                        }
+                    }.bind(this));
+                },
+                saveSubjectInfo() {
+                    this.isLoadingBtn = true;
+                    let data = JSON.stringify({
+                        entrant_subjects: this.subjectsToJson()
+                    });
+
+                    let url = '{% url 'save-subjects-info' %}';
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: data,
+                    })
+                        .then((response) => {
+                            if (response.ok) {
+                                return response.json();
+                            }
+                            throw new Error('Network response was not ok');
+                        })
+                        .then((json) => {
+                            if (json['success']) {
+                                this.isLoadingBtn = false;
+                                this.openAlert();
+                            }
+                        })
+                        .catch((error) => {
+                            console.log(error);
+                        });
+                }
+            }
+        })
+    </script>
+{% endblock %}
